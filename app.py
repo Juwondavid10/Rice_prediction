@@ -1,7 +1,7 @@
 import joblib
 import pandas as pd
 from flask import Flask, request, jsonify
-from flask_cors import CORS # Import the CORS library
+from flask_cors import CORS
 
 # 1. Load the trained model
 try:
@@ -15,10 +15,14 @@ except FileNotFoundError:
 app = Flask(__name__)
 
 # 3. Enable CORS for all routes
-# This allows requests from your React frontend (e.g., http://localhost:3000)
 CORS(app)
 
-# 4. Define the API endpoint for predictions
+# 4. Add a welcome route for the root URL
+@app.route('/', methods=['GET'])
+def home():
+    return "<h1>Rice Yield Prediction API</h1><p>The API is running. Send a POST request to the /predict endpoint to get a prediction.</p>"
+
+# 5. Define the API endpoint for predictions
 @app.route('/predict', methods=['POST'])
 def predict():
     # Get the JSON data from the request
@@ -35,6 +39,6 @@ def predict():
         'predicted_yield': prediction[0]
     })
 
-# 5. Run the Flask app
+# 6. Run the Flask app
 if __name__ == '__main__':
     app.run(debug=True)
