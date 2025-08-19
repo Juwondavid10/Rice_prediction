@@ -28,7 +28,7 @@ function App() {
     };
 
     try {
-      const response = await fetch('https://rice-prediction-wyq8.onrender.com', {
+      const response = await fetch('https://rice-prediction-wyq8.onrender.com/predict', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
