@@ -1,44 +1,83 @@
-import joblib
-import pandas as pd
+# Import necessary libraries from the Flask framework
 from flask import Flask, request, jsonify
-from flask_cors import CORS
 
-# 1. Load the trained model
-try:
-    model = joblib.load('rice_yield_model.joblib')
-    print("Model loaded successfully.")
-except FileNotFoundError:
-    print("Error: 'rice_yield_model.joblib' not found. Please ensure the model file is in the same directory.")
-    exit()
-
-# 2. Initialize the Flask application
+# Create a new Flask application instance
 app = Flask(__name__)
 
-# 3. Enable CORS for all routes
-CORS(app)
+# This is a placeholder function for the rice yield prediction model.
+# In a real-world application, you would load your trained model here
+# using libraries like scikit-learn and joblib.
+# Example: model = joblib.load('your_rice_yield_model.pkl')
+def predict_yield(features):
+    """
+    Predicts the rice yield in tons per hectare based on a set of features.
+    
+    This function uses a simple, linear dummy model for demonstration purposes.
+    The real machine learning model's prediction logic should replace this.
 
-# 4. Add a welcome route for the root URL
-@app.route('/', methods=['GET'])
-def home():
-    return "<h1>Rice Yield Prediction API</h1><p>The API is running. Send a POST request to the /predict endpoint to get a prediction.</p>"
+    Args:
+        features (dict): A dictionary containing the input variables.
+    
+    Returns:
+        float: The predicted yield in tons per hectare.
+    """
+    try:
+        # Extract the features from the input dictionary
+        n = features.get('n_kg_ha', 0)
+        p = features.get('p_kg_ha', 0)
+        k = features.get('k_kg_ha', 0)
+        irrigation = 1 if features.get('irrigation') == 'Yes' else 0
+        
+        # Map pest risk strings to numerical values
+        pest_risk_map = {'Low': 1, 'Medium': 0.5, 'High': 0}
+        pest_risk = pest_risk_map.get(features.get('pest_risk'), 0.5)
 
-# 5. Define the API endpoint for predictions
+        avg_temp = features.get('average_temperature_c', 0)
+        total_rainfall = features.get('total_rainfall_mm', 0)
+        clay = features.get('clay', 0)
+        sand = features.get('sand', 0)
+        silt = features.get('silt', 0)
+
+        # This is the dummy prediction formula from the frontend.
+        # REPLACE THIS with your actual model's prediction logic.
+        predicted_yield = (
+            (0.05 * n) + (0.03 * p) + (0.02 * k) + (0.5 * irrigation) - (0.3 * pest_risk) +
+            (0.1 * avg_temp) + (0.005 * total_rainfall) + (0.01 * clay) - (0.005 * sand) + (0.008 * silt)
+        )
+
+        # Ensure the yield is not a negative value
+        return max(0, predicted_yield)
+
+    except Exception as e:
+        print(f"Error during prediction: {e}")
+        return None
+
+# Define the API endpoint for prediction. It only accepts POST requests.
 @app.route('/predict', methods=['POST'])
-def predict():
-    # Get the JSON data from the request
-    data = request.get_json()
+def handle_predict():
+    """
+    Handles incoming POST requests to the /predict endpoint.
+    It takes JSON data, runs the prediction, and returns a JSON response.
+    """
+    # Check if the request body is valid JSON
+    if not request.json:
+        return jsonify({'error': 'Invalid JSON in request body'}), 400
 
-    # Create a pandas DataFrame from the incoming data
-    new_data = pd.DataFrame(data, index=[0])
+    # Get the features from the JSON data
+    features = request.json
+    
+    # Call the prediction function with the received features
+    predicted_value = predict_yield(features)
 
-    # Make a prediction using the loaded model
-    prediction = model.predict(new_data)
+    # Check if the prediction was successful
+    if predicted_value is None:
+        return jsonify({'error': 'Prediction failed'}), 500
 
-    # Return the prediction as a JSON response
-    return jsonify({
-        'predicted_yield': prediction[0]
-    })
+    # Return the prediction result as a JSON object
+    return jsonify({'predicted_yield': predicted_value})
 
-# 6. Run the Flask app
+# This block ensures the application runs only when the script is executed directly.
 if __name__ == '__main__':
-    app.run(debug=True)
+    # Run the Flask app on host 0.0.0.0 to make it accessible externally
+    # and on port 5000.
+    app.run(host='0.0.0.0', port=5000)
